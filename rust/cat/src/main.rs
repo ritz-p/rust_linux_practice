@@ -1,17 +1,34 @@
 use std::env;
 use std::fs::File;
-use std::fs::OpenOptions;
+use std::io::{BufReader,BufRead};
 fn main() {
-    
     let args: Vec<String> = env::args().collect();
-    println!("argc={}",args.len());
-    for i in 0..args.len(){
-        println!("argv=[{}]={}",i,args[i]);
-    }
+    args[1..].iter().for_each(|path| {
+        match File::options().read(true).open(path) {
+            Ok(file) => {
+                println!("<file={}>",path);
+                let mut buf_file = BufReader::new(file);
+                do_cat(&mut buf_file);
+                println!("</file={}>\n",path);
+            }
+            Err(e) => println!("{}: {}", path, e),
+            }
+    })
 }
 
-fn do_cat(path: String){
-    let buffer_size:usize = 2048;
-    let mut buf:Vec<char> = vec!['0';usize];
-    
+fn do_cat(stream: &mut dyn BufRead) -> (){
+    let mut buffer = String::new();
+    loop{
+        match stream.read_line(&mut buffer){
+            Ok(0) => break,
+            Ok(_) => {
+                print!("{}",buffer);
+                buffer.clear();
+            }
+            Err(e) => {
+                println!("{}",e);
+                break;
+            }
+        }
+    }
 }
